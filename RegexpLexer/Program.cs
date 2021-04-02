@@ -9,7 +9,7 @@ namespace RegexpLexer
         {
             var regexp = "(a|b)*abb"; 
             var postfix = RegexpHelper.InfixToPostfix(regexp);
-            var start = FsmUtils.PostfixToNfa(postfix);
+            var start = FsmHelper.PostfixToNfa(postfix);
 
             if (start == null)
             {
@@ -20,7 +20,7 @@ namespace RegexpLexer
             {
                 Console.WriteLine("Result NFA");
                 Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
-                FsmUtils.DisplayState(start);
+                FsmHelper.DisplayState(start);
             }
 
             Console.ReadLine();

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace RegexpLexer.Logic
 {
-    public static class FsmUtils
+    public static class FsmEngine
     {
         public const char Epsilon = 'є';
         public const string Indent = "   ";
         
-        private static int _stateId = 0;
+        private static int _stateId;
 
         private static State NewState()
         {
@@ -25,8 +25,10 @@ namespace RegexpLexer.Logic
         
         public static State PostfixToNfa(string postfix)
         {
-            Stack<Nfa> nfaStack = new Stack<Nfa>();
-            int step = 1;
+            _stateId = 0;
+
+            var nfaStack = new Stack<Nfa>();
+            var step = 1;
             foreach (var c in postfix)
             {
                 Nfa nfa;

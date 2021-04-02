@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Logic\FsmUtils.cs" />
+    <Compile Include="Logic\FsmEngine.cs" />
     <Compile Include="Logic\Nfa.cs" />
     <Compile Include="Logic\RegexpHelper.cs" />
     <Compile Include="Logic\State.cs" />
