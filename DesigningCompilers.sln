@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegexpLexer", "RegexpLexer\RegexpLexer.csproj", "{BB3780C2-FF77-4945-BD9B-ADA809965642}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegexpLexer.Tests", "RegexpLexer.Tests\RegexpLexer.Tests.csproj", "{26C8A8AB-AD58-4EC4-8D32-EFDD698C2290}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{BB3780C2-FF77-4945-BD9B-ADA809965642}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB3780C2-FF77-4945-BD9B-ADA809965642}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB3780C2-FF77-4945-BD9B-ADA809965642}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26C8A8AB-AD58-4EC4-8D32-EFDD698C2290}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26C8A8AB-AD58-4EC4-8D32-EFDD698C2290}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26C8A8AB-AD58-4EC4-8D32-EFDD698C2290}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26C8A8AB-AD58-4EC4-8D32-EFDD698C2290}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

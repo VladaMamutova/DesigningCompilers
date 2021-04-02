@@ -22,22 +22,7 @@ namespace RegexpLexer.Logic
             start.AddMove(c, final);
             return new Nfa(start, final);
         }
-
-        /// <summary>
-        /// Переписывает инфиксную форму регулярного выражения в эквивалентную форму постфиксную вида.
-        /// https://ru.wikipedia.org/wiki/Обратная_польская_запись#Алгоритм
-        /// </summary>
-        /// <param name="infix"></param>
-        /// <returns></returns>
-        public static string InfixToPostfix(string infix)
-        {
-            // https://stackoverflow.com/questions/1438030/infix-to-postfix-converter
-            // https://habr.com/ru/post/489744/
-            // "a(bb) + a"
-            //return "ab|*a.b.b.";
-            return "abb.+.a.";
-        }
-
+        
         public static State PostfixToNfa(string postfix)
         {
             Stack<Nfa> nfaStack = new Stack<Nfa>();

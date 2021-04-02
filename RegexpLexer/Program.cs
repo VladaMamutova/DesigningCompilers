@@ -7,8 +7,9 @@ namespace RegexpLexer
     {
         static void Main(string[] args)
         {
-            var regexp = "";
-            var start = FsmUtils.PostfixToNfa(FsmUtils.InfixToPostfix(regexp));
+            var regexp = "(a|b)*abb"; 
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var start = FsmUtils.PostfixToNfa(postfix);
 
             if (start == null)
             {
