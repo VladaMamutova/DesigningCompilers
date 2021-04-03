@@ -2,24 +2,24 @@
 
 namespace RegexpLexer.Logic
 {
-    public class Nfa
+    public class Fsm
     {
         public State Start { get; }
         public List<State> Final { get; }
 
-        public Nfa(State start)
+        public Fsm(State start)
         {
             Start = start;
             Final = new List<State>();
         }
 
-        public Nfa(State start, State final)
+        public Fsm(State start, State final)
         {
             Start = start;
             Final = new List<State> { final };
         }
 
-        public Nfa(State start, List<State> final)
+        public Fsm(State start, List<State> final)
         {
             Start = start;
             Final = final;

@@ -44,7 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Logic\FsmEngine.cs" />
-    <Compile Include="Logic\Nfa.cs" />
+    <Compile Include="Logic\Fsm.cs" />
     <Compile Include="Logic\RegexpHelper.cs" />
     <Compile Include="Logic\State.cs" />
     <Compile Include="Program.cs" />

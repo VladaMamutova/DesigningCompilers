@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace RegexpLexer.Logic
 {
@@ -24,12 +23,12 @@ namespace RegexpLexer.Logic
             return start;
         }
 
-        private static Nfa NewSimpleNfa(char c)
+        private static Fsm NewSimpleFsm(char c)
         {
             var start = NewState();
             var final = NewState();
             start.AddMove(c, final);
-            return new Nfa(start, final);
+            return new Fsm(start, final);
         }
 
         /// <summary>
@@ -40,15 +39,15 @@ namespace RegexpLexer.Logic
         /// </summary>
         /// <param name="postfix">Регулярное выражение в постфиксной нотации.</param>
         /// <returns>Начальное состояние построенного НКА.</returns>
-        public static Nfa PostfixToNfa(string postfix)
+        public static Fsm PostfixToNfa(string postfix)
         {
             _stateId = 0;
 
-            var nfaStack = new Stack<Nfa>();
+            var nfaStack = new Stack<Fsm>();
             var step = 1;
             foreach (var c in postfix)
             {
-                Nfa nfa;
+                Fsm nfa;
                 switch (c)
                 {
                     case '.': // конкатенация
@@ -59,7 +58,7 @@ namespace RegexpLexer.Logic
                         nfa1.Final.ForEach(f =>
                             f.AddAllMoves(nfa2.Start.Moves));
 
-                        nfa = new Nfa(nfa1.Start, nfa2.Final);
+                        nfa = new Fsm(nfa1.Start, nfa2.Final);
                         break;
                     }
                     case '|': // альтернатива
@@ -75,7 +74,7 @@ namespace RegexpLexer.Logic
                         nfa1.Final.ForEach(f => f.AddMove(Epsilon, final));
                         nfa2.Final.ForEach(f => f.AddMove(Epsilon, final));
 
-                        nfa = new Nfa(start, final);
+                        nfa = new Fsm(start, final);
                         break;
                     }
                     case '*': // ноль или больше
@@ -94,7 +93,7 @@ namespace RegexpLexer.Logic
                             f.AddMove(Epsilon, final);
                         });
 
-                        nfa = new Nfa(start, final);
+                        nfa = new Fsm(start, final);
                         break;
                     }
                     case '+': // один или больше
@@ -112,12 +111,12 @@ namespace RegexpLexer.Logic
                             f.AddMove(Epsilon, final);
                         });
 
-                        nfa = new Nfa(start, final);
+                        nfa = new Fsm(start, final);
                         break;
                     }
                     default: // символ
                     {
-                        nfa = NewSimpleNfa(c);
+                        nfa = NewSimpleFsm(c);
                         break;
                     }
                 }
@@ -137,14 +136,14 @@ namespace RegexpLexer.Logic
         /// </summary>
         /// <param name="nfa"></param>
         /// <returns></returns>
-        public static Nfa NfaToDfa(Nfa nfa)
+        public static Fsm NfaToDfa(Fsm nfa)
         {
             _stateId = 0;
             
             var stateSubsets = new List<State> { NewState(Epsilon, EpsilonClosure(nfa.Start)) };
             var dfaStates = new Dictionary<int, State>
                 {{stateSubsets[0].Id, new State(stateSubsets[0].Id)}};
-            var dfa = new Nfa(dfaStates[stateSubsets[0].Id]);
+            var dfa = new Fsm(dfaStates[stateSubsets[0].Id]);
 
             var passedStates = new HashSet<int>();
 
@@ -217,7 +216,7 @@ namespace RegexpLexer.Logic
         // r(A) — обратный автомат для A,
         // dr(A) — результат d(r(A)). Аналогично для rdr(A) и drdr(A).
         // По алгоритму Бржовского, мининимальный детерминированный автомат = drdr(A)
-        public static State MinimizeDfaByBrzozowski(State state)
+        public static Fsm MinimizeDfaByBrzozowski(Fsm dfa)
         {
             return null;
         }
@@ -227,7 +226,7 @@ namespace RegexpLexer.Logic
             return null;
         }
         
-        public static void DisplayFsm(Nfa nfa)
+        public static void DisplayFsm(Fsm nfa)
         {
             Console.WriteLine(nfa);
             Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
@@ -261,7 +260,7 @@ namespace RegexpLexer.Logic
             Console.WriteLine($"{indent}{from} ––{c}––> {to}");
         }
 
-        private static void DisplayNfaOnStep(Nfa nfa, int step)
+        private static void DisplayNfaOnStep(Fsm nfa, int step)
         {
             Console.WriteLine();
             Console.Write($"Step {step}. NFA = ");
