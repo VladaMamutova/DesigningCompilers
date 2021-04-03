@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace RegexpLexer.Logic
 {
@@ -28,6 +29,46 @@ namespace RegexpLexer.Logic
             Moves.AddRange(moves);
         }
 
+        public List<char> GetOutputAlphabet()
+        {
+            List<char> chars = new List<char>();
+            foreach (var move in Moves)
+            {
+                chars.AddRange(move.Value.Moves.Select(m => m.Key));
+            }
+
+            return chars.Distinct().ToList();
+        }
+
+        public List<State> FindOutStates(char c)
+        {
+            List<State> states = new List<State>();
+            foreach (var move in Moves)
+            {
+                foreach (var nextMove in move.Value.Moves)
+                {
+                    if (nextMove.Key == c)
+                    {
+                        states.Add(nextMove.Value);
+                    }
+                }
+            }
+
+            return states;
+        }
+
+        public bool CheckOutStates(List<State> states)
+        {
+            var nextStates = Moves.Select(move => move.Value).ToList();
+            if (states.Count != nextStates.Count) return false;
+            foreach (var state in nextStates)
+            {
+                if (!states.Contains(state)) return false;
+            }
+
+            return true;
+        }
+
         public override bool Equals(object obj)
         {
             if (!(obj is State item))
@@ -48,6 +89,11 @@ namespace RegexpLexer.Logic
                 case FinalId: return "match";
                 default: return $"s{Id}";
             }
+        }
+
+        public string ShowOutStates()
+        {
+            return $"{string.Join(", ", Moves.Select(state => state.Value))}";
         }
     }
 }
