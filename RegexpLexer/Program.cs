@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using RegexpLexer.Logic;
 
 namespace RegexpLexer
@@ -19,16 +21,14 @@ namespace RegexpLexer
             else
             {
                 Console.WriteLine();
-                Console.WriteLine("Result NFA");
-                Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
-                FsmEngine.DisplayState(nfa);
+                Console.Write("Result NFA = ");
+                FsmEngine.DisplayFsm(nfa);
             }
 
             var dfa = FsmEngine.NfaToDfa(nfa);
             Console.WriteLine();
-            Console.WriteLine("Result DFA");
-            Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
-            FsmEngine.DisplayState(dfa);
+            Console.Write("Result DFA = ");
+            FsmEngine.DisplayFsm(dfa);
 
             Console.ReadLine();
         }

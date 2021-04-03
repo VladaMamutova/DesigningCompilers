@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace RegexpLexer.Logic
 {
@@ -16,10 +17,10 @@ namespace RegexpLexer.Logic
             return new State(_stateId++);
         }
 
-        private static State NewState(char c, List<State> nextStates)
+        private static State NewState(char c, HashSet<State> nextStates)
         {
             var start = NewState();
-            nextStates.ForEach(state => start.AddMove(c, state));
+            nextStates.ToList().ForEach(state => start.AddMove(c, state));
             return start;
         }
 
@@ -39,7 +40,7 @@ namespace RegexpLexer.Logic
         /// </summary>
         /// <param name="postfix">Регулярное выражение в постфиксной нотации.</param>
         /// <returns>Начальное состояние построенного НКА.</returns>
-        public static State PostfixToNfa(string postfix)
+        public static Nfa PostfixToNfa(string postfix)
         {
             _stateId = 0;
 
@@ -121,98 +122,80 @@ namespace RegexpLexer.Logic
                     }
                 }
 
-                // DisplayNfaOnStep(nfa, step++);
+                DisplayNfaOnStep(nfa, step++);
                 nfaStack.Push(nfa);
             }
 
-            if (nfaStack.Count == 1 && nfaStack.Peek().Final.Count == 1)
-            {
-                var nfa = nfaStack.Pop();
-                nfa.Final[0].AddMove(Epsilon, State.Match);
-                var start = State.Start;
-                start.AddMove(Epsilon, nfa.Start);
-                return start;
-            }
-
-            return null;
+            return nfaStack.Count == 1 && nfaStack.Peek().Final.Count == 1
+                ? nfaStack.Pop()
+                : null;
         }
 
         /// <summary>
         /// Преобразование НКА в ДКА
         /// Алгоритм 3.20. Построение подмножества (subset construction) ДКА из НКА
         /// </summary>
-        /// <param name="start"></param>
+        /// <param name="nfa"></param>
         /// <returns></returns>
-        public static State NfaToDfa(State start)
+        public static Nfa NfaToDfa(Nfa nfa)
         {
             _stateId = 0;
+            
+            var stateSubsets = new List<State> { NewState(Epsilon, EpsilonClosure(nfa.Start)) };
+            var dfaStates = new Dictionary<int, State>
+                {{stateSubsets[0].Id, new State(stateSubsets[0].Id)}};
+            var dfa = new Nfa(dfaStates[stateSubsets[0].Id]);
 
-            var moves = new Dictionary<KeyValuePair<int, char>, List<State>>();
-            var dfaMoves = new Dictionary<KeyValuePair<int, char>, int>();
+            var passedStates = new HashSet<int>();
 
-            var states = new List<State>
-                {NewState(Epsilon, EpsilonClosure(start))};
-            var passedStates = new List<int>();
-            while (states.Exists(state => !passedStates.Contains(state.Id)))
+            while (stateSubsets.Exists(state => !passedStates.Contains(state.Id)))
             {
-                var state = states.Find(s => !passedStates.Contains(s.Id));
+                var state = stateSubsets.Find(s => !passedStates.Contains(s.Id));
                 passedStates.Add(state.Id);
+
                 var chars = state.GetOutputAlphabet();
                 chars.Remove(Epsilon);
                 foreach (var c in chars)
                 {
                     var closure = EpsilonClosure(state.FindOutStates(c));
                     var dfaState =
-                        states.FirstOrDefault(s => s.CheckOutStates(closure));
+                        stateSubsets.FirstOrDefault(s => s.CheckOutStates(closure));
                     if (dfaState == null)
                     {
                         dfaState = NewState(c, closure);
-                        states.Add(dfaState);
+                        stateSubsets.Add(dfaState);
+                        dfaStates.Add(dfaState.Id, new State(dfaState.Id));
+                        nfa.Final.ForEach(finalState =>
+                        {
+                            if (closure.Contains(finalState))
+                            {
+                                dfa.AddFinalState(dfaStates[dfaState.Id]);
+                            }
+                        });
                     }
 
-                    moves.Add(new KeyValuePair<int, char>(state.Id, c),
-                        closure);
-                    dfaMoves.Add(new KeyValuePair<int, char>(state.Id, c),
-                        dfaState.Id);
+                    dfaStates[state.Id].AddMove(c, dfaStates[dfaState.Id]);
                 }
             }
 
-            DisplayDfaTransitionTable(states, moves);
+            DisplayDfaTransitionTable(dfaStates.Select(state => state.Value), stateSubsets);
 
-            return ConstructDfaByTransitionTable(states, dfaMoves);
+            return dfa;
         }
 
-        private static State ConstructDfaByTransitionTable(List<State> states,
-            Dictionary<KeyValuePair<int, char>, int> moves)
-        {
-            List<State> dfaStates =
-                states.Select(state => new State(state.Id)).ToList();
-            foreach (var dfaState in dfaStates)
-            {
-                var dfaMoves = moves.Where(move => move.Key.Key == dfaState.Id);
-                foreach (var move in dfaMoves)
-                {
-                    dfaState.AddMove(move.Key.Value,
-                        dfaStates.Find(s => s.Id == move.Value));
-                }
-            }
-
-            return dfaStates[0];
-        }
-
-        public static List<State> EpsilonClosure(State start)
+        public static HashSet<State> EpsilonClosure(State start)
         {
             return EpsilonClosure(new List<State> {start});
         }
 
         // Множество состояний НКА, достижимых из состояния s из
         // множества T при одном є-переходе; = ∪s  T-closure(s)
-        public static List<State> EpsilonClosure(List<State> startStates)
+        public static HashSet<State> EpsilonClosure(List<State> startStates)
         {
             var states = new Stack<State>();
             startStates.ForEach(state => states.Push(state));
 
-            var closure = states.ToList();
+            var closure = states.ToHashSet();
             while (states.Count > 0)
             {
                 var state = states.Pop();
@@ -229,16 +212,29 @@ namespace RegexpLexer.Logic
             return closure;
         }
 
-        private static void DisplayNfaOnStep(Nfa nfa, int step)
+        // A — конечный автомат,
+        // d(A) — детерминизированный автомат для A,
+        // r(A) — обратный автомат для A,
+        // dr(A) — результат d(r(A)). Аналогично для rdr(A) и drdr(A).
+        // По алгоритму Бржовского, мининимальный детерминированный автомат = drdr(A)
+        public static State MinimizeDfaByBrzozowski(State state)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Step {step}. NFA = {nfa}");
-            Console.WriteLine(
-                "–––––––––––––––––––––––––––––––––––––––––––––––––––");
-            DisplayState(nfa.Start);
+            return null;
         }
 
-        public static List<State> DisplayState(State state,
+        public static State ReverseFsm(State state)
+        {
+            return null;
+        }
+        
+        public static void DisplayFsm(Nfa nfa)
+        {
+            Console.WriteLine(nfa);
+            Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
+            DisplayState(nfa.Start);
+        }
+        
+        private static List<State> DisplayState(State state,
             List<int> passedStatesId = null, string indent = Indent)
         {
             if (state.Moves.Count == 0) return new List<State> {state};
@@ -246,34 +242,49 @@ namespace RegexpLexer.Logic
             if (passedStatesId == null) passedStatesId = new List<int>();
             passedStatesId.Add(state.Id);
 
-            var final = new List<State>();
+            var nextStates = new List<State>();
             foreach (var move in state.Moves)
             {
-                Console.WriteLine(
-                    $"{indent}{state} ––{move.Key}––> {move.Value}");
+                DisplayMove(state.ToString(), move.Key, move.Value.ToString(), indent);
                 if (!passedStatesId.Contains(move.Value.Id))
                 {
-                    final.AddRange(DisplayState(move.Value, passedStatesId,
+                    nextStates.AddRange(DisplayState(move.Value, passedStatesId,
                         indent + Indent));
                 }
             }
 
-            return final;
+            return nextStates;
         }
 
-        private static void DisplayDfaTransitionTable(List<State> states,
-            Dictionary<KeyValuePair<int, char>, List<State>> moves)
+        private static void DisplayMove(string from, char c, string to, string indent = Indent)
+        {
+            Console.WriteLine($"{indent}{from} ––{c}––> {to}");
+        }
+
+        private static void DisplayNfaOnStep(Nfa nfa, int step)
+        {
+            Console.WriteLine();
+            Console.Write($"Step {step}. NFA = ");
+            DisplayFsm(nfa);
+        }
+
+        private static void DisplayDfaTransitionTable(
+            IEnumerable<State> dfaStates, List<State> stateSubsets)
         {
             Console.WriteLine();
             Console.WriteLine("Transition Table: NFA -> DFA");
-            Console.WriteLine("–––––––––––––––––––––––––––––––––––––––––––––––––––");
-            foreach (var move in moves)
+            Console.WriteLine(
+                "–––––––––––––––––––––––––––––––––––––––––––––––––––");
+            foreach (var dfaState in dfaStates)
             {
-                var dfaState = states.Find(state => state.Id == move.Key.Key);
-                Console.WriteLine(
-                    $"{Indent}S{move.Key.Key} ({dfaState.ShowOutStates()}) " +
-                    $"--{move.Key.Value}--> " +
-                    $"{{{string.Join(", ", move.Value)}}}");
+                foreach (var move in dfaState.Moves)
+                {
+                    var stateSubset =
+                        stateSubsets.Find(state => state.Id == dfaState.Id);
+                    DisplayMove(
+                        $"{dfaState.ToString("S")} ({stateSubset.ShowOutStates()})",
+                        move.Key, string.Join(", ", move.Value.ToString("S")));
+                }
             }
         }
     }

@@ -5,11 +5,6 @@ namespace RegexpLexer.Logic
 {
     public class State
     {
-        private const int StartId = -1;
-        private const int FinalId = -2;
-        public static readonly State Start = new State(StartId);
-        public static readonly State Match = new State(FinalId);
-
         public int Id { get; }
         public List<KeyValuePair<char, State>> Moves { get; }
 
@@ -57,38 +52,27 @@ namespace RegexpLexer.Logic
             return states;
         }
 
-        public bool CheckOutStates(List<State> states)
+        public bool CheckOutStates(HashSet<State> states)
         {
             var nextStates = Moves.Select(move => move.Value).ToList();
-            if (states.Count != nextStates.Count) return false;
-            foreach (var state in nextStates)
-            {
-                if (!states.Contains(state)) return false;
-            }
-
-            return true;
+            return states.Count == nextStates.Count && nextStates.All(states.Contains);
         }
 
         public override bool Equals(object obj)
         {
-            if (!(obj is State item))
-            {
-                return false;
-            }
-
-            return Id.Equals(item.Id);
+            return obj is State item && Id.Equals(item.Id);
         }
 
         public override int GetHashCode() => Id.GetHashCode();
 
         public override string ToString()
         {
-            switch (Id)
-            {
-                case StartId: return "start";
-                case FinalId: return "match";
-                default: return $"s{Id}";
-            }
+            return $"s{Id}";
+        }
+
+        public string ToString(string name)
+        {
+            return $"{name}{Id}";
         }
 
         public string ShowOutStates()

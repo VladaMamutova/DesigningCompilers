@@ -4,8 +4,20 @@ namespace RegexpLexer.Logic
 {
     public class Nfa
     {
-        public State Start;
-        public List<State> Final;
+        public State Start { get; }
+        public List<State> Final { get; }
+
+        public Nfa(State start)
+        {
+            Start = start;
+            Final = new List<State>();
+        }
+
+        public Nfa(State start, State final)
+        {
+            Start = start;
+            Final = new List<State> { final };
+        }
 
         public Nfa(State start, List<State> final)
         {
@@ -13,10 +25,9 @@ namespace RegexpLexer.Logic
             Final = final;
         }
 
-        public Nfa(State start, State final)
+        public void AddFinalState(State state)
         {
-            Start = start;
-            Final = new List<State> { final };
+            Final.Add(state);
         }
 
         public override string ToString()
