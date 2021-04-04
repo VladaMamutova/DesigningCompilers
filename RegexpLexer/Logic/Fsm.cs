@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace RegexpLexer.Logic
 {
@@ -28,6 +29,25 @@ namespace RegexpLexer.Logic
         public void AddFinalState(State state)
         {
             Final.Add(state);
+        }
+
+        public HashSet<State> GetAllStates()
+        {
+            var states = new Dictionary<State, bool> {{Start, false}};
+            while (states.Values.Contains(false))
+            {
+                var state = states.First(s => !s.Value).Key;
+                states[state] = true;
+                foreach (var move in state.Moves)
+                {
+                    if (!states.ContainsKey(move.Value))
+                    {
+                        states.Add(move.Value, false);
+                    }
+                }
+            }
+
+            return states.Keys.ToHashSet();
         }
 
         public override string ToString()

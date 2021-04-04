@@ -216,14 +216,56 @@ namespace RegexpLexer.Logic
         // r(A) — обратный автомат для A,
         // dr(A) — результат d(r(A)). Аналогично для rdr(A) и drdr(A).
         // По алгоритму Бржовского, мининимальный детерминированный автомат = drdr(A)
-        public static Fsm MinimizeDfaByBrzozowski(Fsm dfa)
+        public static Fsm MinimizeFsmByBrzozowski(Fsm fsm)
         {
+
             return null;
         }
 
-        public static State ReverseFsm(State state)
+        // Обратный автомат для A - автомат, полученный из A сменой местами начальных
+        // и конечных состояний и сменой направлений переходов.
+        public static Fsm ReverseFsm(Fsm fsm)
         {
-            return null;
+            var states = new Dictionary<int, State>();
+            var stateQueue = new Queue<State>();
+
+            var newStartId = fsm.Final.Count > 1
+                ? fsm.Final.Select(state => state.Id).Max() + 1
+                : fsm.Final[0].Id;
+
+            var reversedFsm = new Fsm(new State(newStartId), new State(fsm.Start.Id));
+            states.Add(reversedFsm.Start.Id, reversedFsm.Start);
+            states.Add(reversedFsm.Final[0].Id, reversedFsm.Final[0]);
+            stateQueue.Enqueue(fsm.Start);
+
+            if (fsm.Final.Count > 1)
+            {
+                // Так как класс Fsm имеет одно начальное состояние, то при смене
+                // мест начального и конечных состояний добавим новое начальное
+                // состояние, которое будет иметь є-переходы со все конечные.
+                fsm.Final.ForEach(state =>
+                {
+                    states.Add(state.Id, new State(state.Id));
+                    stateQueue.Enqueue(state);
+                    reversedFsm.Start.AddMove(Epsilon, states[state.Id]);
+                });
+            }
+
+            while (stateQueue.Count > 0)
+            {
+                var state = stateQueue.Dequeue();
+                foreach (var move in state.Moves)
+                {
+                    if (!states.ContainsKey(move.Value.Id))
+                    {
+                        states.Add(move.Value.Id, new State(move.Value.Id));
+                        stateQueue.Enqueue(move.Value);
+                    }
+                    states[move.Value.Id].AddMove(move.Key, states[state.Id]);
+                }
+            }
+            
+            return reversedFsm;
         }
         
         public static void DisplayFsm(Fsm nfa)
