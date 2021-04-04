@@ -9,7 +9,7 @@ namespace RegexpLexer.Tests
     {
         public class FsmEngineTestData
         {
-            public static Fsm InitOneStartOneEndFsm()
+            public static Fsm InitFsmWithOneFinal()
             {
                 var state0 = new State(0);
                 var state1 = new State(1);
@@ -27,7 +27,7 @@ namespace RegexpLexer.Tests
                 return fsm;
             }
 
-            public static Fsm InitOneStartOneEndReversedFsm()
+            public static Fsm InitReversedFsmWithOneFinal()
             {
                 var state3 = new State(3);
                 var state1 = new State(1);
@@ -44,8 +44,24 @@ namespace RegexpLexer.Tests
                 state2.AddMove('b', state0);
                 return fsm;
             }
+            
+            public static Fsm InitDeterministicFsmWithOneFinal()
+            {
+                var state0 = new State(0);
+                var state1 = new State(1);
+                var state2 = new State(2);
+                var state3 = new State(3);
+                var fsm = new Fsm(state0, state3);
+                state0.AddMove('a', state1);
+                state0.AddMove('b', state2);
+                state1.AddMove('a', state1);
+                state1.AddMove('b', state3);
+                state2.AddMove('a', state1);
+                state2.AddMove('b', state3);
+                return fsm;
+            }
 
-            public static Fsm InitOneStartTwoEndsFsm()
+            public static Fsm InitFsmWithTwoFinals()
             {
                 var state0 = new State(0);
                 var state1 = new State(1);
@@ -60,7 +76,7 @@ namespace RegexpLexer.Tests
                 return fsm;
             }
 
-            public static Fsm InitOneStartTwoEndsReversedFsm()
+            public static Fsm InitReversedFsmWithStartFromEpsilon()
             {
                 var state4 = new State(4);
                 var state2 = new State(2);
@@ -77,35 +93,90 @@ namespace RegexpLexer.Tests
                 state1.AddMove('b', state0);
                 return fsm;
             }
+
+            public static Fsm InitDeterministicFsmWithStartFromEpsilon()
+            {
+                var state0 = new State(0);
+                var state1 = new State(1);
+                var state2 = new State(2);
+                var state3 = new State(3);
+                var fsm = new Fsm(state0, state3);
+                state0.AddMove('a', state1);
+                state0.AddMove('b', state1);
+                state1.AddMove('a', state1);
+                state1.AddMove('b', state2);
+                return fsm;
+            }
         }
 
         [Fact]
-        public void ReverseFsm_OneStartOneFinal()
+        public void ReverseFsm_OneFinal()
         {
             // Arrange
-            var fsm = FsmEngineTestData.InitOneStartOneEndFsm();
-            var fsmExpected = FsmEngineTestData.InitOneStartOneEndReversedFsm();
+            var fsm = FsmEngineTestData.InitFsmWithOneFinal();
+            var expected = FsmEngineTestData.InitReversedFsmWithOneFinal();
 
             // Act
-            Fsm reversedFsm = FsmEngine.ReverseFsm(fsm);
+            Fsm actual = FsmEngine.ReverseFsm(fsm);
 
             // Assert
-            Assert.Equal(fsmExpected, reversedFsm, new FsmEqualityComparer());
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
         }
 
         [Fact]
-        public void ReverseFsm_OneStartTwoFinals()
+        public void ReverseFsm_TwoFinals()
         {
             // Arrange
-            var fsm = FsmEngineTestData.InitOneStartTwoEndsFsm();
-            var fsmExpected = FsmEngineTestData.InitOneStartTwoEndsReversedFsm();
+            var fsm = FsmEngineTestData.InitFsmWithTwoFinals();
+            var expected = FsmEngineTestData.InitReversedFsmWithStartFromEpsilon();
 
             // Act
-            Fsm reversedFsm = FsmEngine.ReverseFsm(fsm);
+            Fsm actual = FsmEngine.ReverseFsm(fsm);
 
             // Assert
-            Assert.Equal(fsmExpected, reversedFsm, new FsmEqualityComparer());
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
         }
 
+        [Fact]
+        public void DeterminizeFsm_OneFinal()
+        {
+            // Arrange
+            var fsm = FsmEngineTestData.InitFsmWithOneFinal();
+            var expected = FsmEngineTestData.InitDeterministicFsmWithOneFinal();
+
+            // Act
+            Fsm actual = FsmEngine.DeterminizeFsm(fsm);
+
+            // Assert
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
+        }
+
+        [Fact]
+        public void DeterminizeFsm_TwoFinals()
+        {
+            // Arrange
+            var fsm = FsmEngineTestData.InitReversedFsmWithStartFromEpsilon();
+            var expected = FsmEngineTestData.InitDeterministicFsmWithStartFromEpsilon();
+
+            // Act
+            Fsm actual = FsmEngine.DeterminizeFsm(fsm);
+
+            // Assert
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
+        }
+
+        [Fact]
+        public void MinimizeFsmByBrzozowski()
+        {
+            // Arrange
+            var fsm = FsmEngineTestData.InitFsmWithOneFinal();
+            var expected = FsmEngineTestData.InitDeterministicFsmWithStartFromEpsilon();
+
+            // Act
+            Fsm actual = FsmEngine.MinimizeFsmByBrzozowski(fsm);
+
+            // Assert
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
+        }
     }
 }

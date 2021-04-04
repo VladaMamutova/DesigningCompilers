@@ -139,7 +139,7 @@ namespace RegexpLexer.Logic
         public static Fsm NfaToDfa(Fsm nfa)
         {
             _stateId = 0;
-            
+
             var stateSubsets = new List<State> { NewState(Epsilon, EpsilonClosure(nfa.Start)) };
             var dfaStates = new Dictionary<int, State>
                 {{stateSubsets[0].Id, new State(stateSubsets[0].Id)}};
@@ -147,18 +147,22 @@ namespace RegexpLexer.Logic
 
             var passedStates = new HashSet<int>();
 
-            while (stateSubsets.Exists(state => !passedStates.Contains(state.Id)))
+            while (stateSubsets.Exists(
+                state => !passedStates.Contains(state.Id)))
             {
-                var state = stateSubsets.Find(s => !passedStates.Contains(s.Id));
+                var state =
+                    stateSubsets.Find(s => !passedStates.Contains(s.Id));
                 passedStates.Add(state.Id);
 
-                var chars = state.GetOutputAlphabet();
-                chars.Remove(Epsilon);
-                foreach (var c in chars)
+                var stateSubset =
+                    state.Moves.Select(move => move.Value).ToList();
+                var alphabet = GetAlphabet(stateSubset);
+                foreach (var c in alphabet)
                 {
-                    var closure = EpsilonClosure(state.FindOutStates(c));
-                    var dfaState =
-                        stateSubsets.FirstOrDefault(s => s.CheckOutStates(closure));
+                    var closure =
+                        EpsilonClosure(GetNextStatesByChar(stateSubset, c));
+                    var dfaState = stateSubsets.FirstOrDefault(s =>
+                        s.CompareNextStates(closure));
                     if (dfaState == null)
                     {
                         dfaState = NewState(c, closure);
@@ -218,8 +222,12 @@ namespace RegexpLexer.Logic
         // По алгоритму Бржовского, мининимальный детерминированный автомат = drdr(A)
         public static Fsm MinimizeFsmByBrzozowski(Fsm fsm)
         {
+            return DeterminizeFsm(ReverseFsm(DeterminizeFsm(ReverseFsm(fsm))));
+        }
 
-            return null;
+        public static Fsm MinimizeFsmByBrzozowski_1(Fsm fsm)
+        {
+            return NfaToDfa(ReverseFsm(NfaToDfa(ReverseFsm(fsm))));
         }
 
         // Обратный автомат для A - автомат, полученный из A сменой местами начальных
@@ -267,7 +275,81 @@ namespace RegexpLexer.Logic
             
             return reversedFsm;
         }
-        
+
+        public static Fsm DeterminizeFsm(Fsm fsm)
+        {
+            _stateId = 0;
+
+            State start;
+            if (fsm.Start.Moves.TrueForAll(move => move.Key == Epsilon))
+            {
+                start = NewState(Epsilon, EpsilonClosure(fsm.Start));
+            }
+            else
+            {
+                start = NewState(Epsilon, new HashSet<State> {fsm.Start});
+            }
+
+            var stateSubsets = new List<State> { start };
+            var dfaStates = new Dictionary<int, State>
+                {{start.Id, new State(start.Id)}};
+            var dfa = new Fsm(dfaStates[start.Id]);
+
+            var passedStates = new HashSet<int>();
+
+            while (stateSubsets.Exists(
+                state => !passedStates.Contains(state.Id)))
+            {
+                var state =
+                    stateSubsets.Find(s => !passedStates.Contains(s.Id));
+                passedStates.Add(state.Id);
+
+                var stateSubset = state.Moves.Select(move => move.Value).ToList();
+                var alphabet = GetAlphabet(stateSubset);
+                foreach (var c in alphabet)
+                {
+                    var closure = GetNextStatesByChar(stateSubset, c).ToHashSet();
+                    var dfaState =
+                        stateSubsets.FirstOrDefault(s => s.CompareNextStates(closure));
+                    if (dfaState == null)
+                    {
+                        dfaState = NewState(c, closure);
+                        stateSubsets.Add(dfaState);
+                        dfaStates.Add(dfaState.Id, new State(dfaState.Id));
+                        fsm.Final.ForEach(finalState =>
+                        {
+                            if (closure.Contains(finalState))
+                            {
+                                dfa.AddFinalState(dfaStates[dfaState.Id]);
+                            }
+                        });
+                    }
+
+                    dfaStates[state.Id].AddMove(c, dfaStates[dfaState.Id]);
+                }
+            }
+
+            DisplayDfaTransitionTable(dfaStates.Select(state => state.Value), stateSubsets);
+
+            return dfa;
+        }
+
+        public static List<char> GetAlphabet(List<State> states)
+        {
+            var alphabet = new List<char>();
+            states.ForEach(state => alphabet.AddRange(state.GetAlphabet()));
+            alphabet = alphabet.Distinct().ToList();
+            alphabet.Remove(Epsilon);
+            return alphabet;
+        }
+
+        public static List<State> GetNextStatesByChar(List<State> states, char c)
+        {
+            var nextStates = new List<State>();
+            states.ForEach(state => nextStates.AddRange(state.GetNextStatesByChar(c)));
+            return nextStates;
+        }
+
         public static void DisplayFsm(Fsm nfa)
         {
             Console.WriteLine(nfa);

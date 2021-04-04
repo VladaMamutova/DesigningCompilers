@@ -24,35 +24,18 @@ namespace RegexpLexer.Logic
             Moves.AddRange(moves);
         }
 
-        public List<char> GetOutputAlphabet()
+        public List<char> GetAlphabet()
         {
-            List<char> chars = new List<char>();
-            foreach (var move in Moves)
-            {
-                chars.AddRange(move.Value.Moves.Select(m => m.Key));
-            }
-
-            return chars.Distinct().ToList();
+            return Moves.Select(move => move.Key).Distinct().ToList();
         }
 
-        public List<State> FindOutStates(char c)
+        public List<State> GetNextStatesByChar(char c)
         {
-            List<State> states = new List<State>();
-            foreach (var move in Moves)
-            {
-                foreach (var nextMove in move.Value.Moves)
-                {
-                    if (nextMove.Key == c)
-                    {
-                        states.Add(nextMove.Value);
-                    }
-                }
-            }
-
-            return states;
+            return Moves.Where(move => move.Key == c).Select(move => move.Value)
+                .ToList();
         }
 
-        public bool CheckOutStates(HashSet<State> states)
+        public bool CompareNextStates(HashSet<State> states)
         {
             var nextStates = Moves.Select(move => move.Value).ToList();
             return states.Count == nextStates.Count && nextStates.All(states.Contains);
