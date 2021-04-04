@@ -121,7 +121,7 @@ namespace RegexpLexer.Logic
                     }
                 }
 
-                DisplayNfaOnStep(nfa, step++);
+                //DisplayNfaOnStep(nfa, step++);
                 nfaStack.Push(nfa);
             }
 
@@ -181,7 +181,7 @@ namespace RegexpLexer.Logic
                 }
             }
 
-            DisplayDfaTransitionTable(dfaStates.Select(state => state.Value), stateSubsets);
+            //DisplayDfaTransitionTable(dfaStates.Select(state => state.Value), stateSubsets);
 
             return dfa;
         }
@@ -222,11 +222,6 @@ namespace RegexpLexer.Logic
         // По алгоритму Бржовского, мининимальный детерминированный автомат = drdr(A)
         public static Fsm MinimizeFsmByBrzozowski(Fsm fsm)
         {
-            return DeterminizeFsm(ReverseFsm(DeterminizeFsm(ReverseFsm(fsm))));
-        }
-
-        public static Fsm MinimizeFsmByBrzozowski_1(Fsm fsm)
-        {
             return NfaToDfa(ReverseFsm(NfaToDfa(ReverseFsm(fsm))));
         }
 
@@ -236,28 +231,33 @@ namespace RegexpLexer.Logic
         {
             var states = new Dictionary<int, State>();
             var stateQueue = new Queue<State>();
-
-            var newStartId = fsm.Final.Count > 1
-                ? fsm.Final.Select(state => state.Id).Max() + 1
-                : fsm.Final[0].Id;
-
-            var reversedFsm = new Fsm(new State(newStartId), new State(fsm.Start.Id));
-            states.Add(reversedFsm.Start.Id, reversedFsm.Start);
-            states.Add(reversedFsm.Final[0].Id, reversedFsm.Final[0]);
             stateQueue.Enqueue(fsm.Start);
 
-            if (fsm.Final.Count > 1)
+            State newStart;
+            if (fsm.Final.Count == 1)
+            {
+                newStart = new State(fsm.Final[0].Id);
+                states.Add(newStart.Id, newStart);
+                stateQueue.Enqueue(fsm.Final[0]);
+            }
+            else
             {
                 // Так как класс Fsm имеет одно начальное состояние, то при смене
                 // мест начального и конечных состояний добавим новое начальное
                 // состояние, которое будет иметь є-переходы со все конечные.
-                fsm.Final.ForEach(state =>
+                newStart = new State(fsm.Final.Max(state => state.Id) + 1);
+                states.Add(newStart.Id, newStart);
+
+                fsm.Final.ForEach(final =>
                 {
-                    states.Add(state.Id, new State(state.Id));
-                    stateQueue.Enqueue(state);
-                    reversedFsm.Start.AddMove(Epsilon, states[state.Id]);
+                    states.Add(final.Id, new State(final.Id));
+                    newStart.AddMove(Epsilon, states[final.Id]);
+                    stateQueue.Enqueue(final);
                 });
             }
+
+            var reversedFsm = new Fsm(newStart, new State(fsm.Start.Id));
+            states.Add(reversedFsm.Final[0].Id, reversedFsm.Final[0]);
 
             while (stateQueue.Count > 0)
             {
@@ -276,65 +276,18 @@ namespace RegexpLexer.Logic
             return reversedFsm;
         }
 
-        public static Fsm DeterminizeFsm(Fsm fsm)
+        public static bool DfaSimulation(Fsm fsm, string input)
         {
-            _stateId = 0;
-
-            State start;
-            if (fsm.Start.Moves.TrueForAll(move => move.Key == Epsilon))
+            var state = fsm.Start;
+            foreach (var c in input)
             {
-                start = NewState(Epsilon, EpsilonClosure(fsm.Start));
-            }
-            else
-            {
-                start = NewState(Epsilon, new HashSet<State> {fsm.Start});
+                state = state.GetNextStateByChar(c);
             }
 
-            var stateSubsets = new List<State> { start };
-            var dfaStates = new Dictionary<int, State>
-                {{start.Id, new State(start.Id)}};
-            var dfa = new Fsm(dfaStates[start.Id]);
-
-            var passedStates = new HashSet<int>();
-
-            while (stateSubsets.Exists(
-                state => !passedStates.Contains(state.Id)))
-            {
-                var state =
-                    stateSubsets.Find(s => !passedStates.Contains(s.Id));
-                passedStates.Add(state.Id);
-
-                var stateSubset = state.Moves.Select(move => move.Value).ToList();
-                var alphabet = GetAlphabet(stateSubset);
-                foreach (var c in alphabet)
-                {
-                    var closure = GetNextStatesByChar(stateSubset, c).ToHashSet();
-                    var dfaState =
-                        stateSubsets.FirstOrDefault(s => s.CompareNextStates(closure));
-                    if (dfaState == null)
-                    {
-                        dfaState = NewState(c, closure);
-                        stateSubsets.Add(dfaState);
-                        dfaStates.Add(dfaState.Id, new State(dfaState.Id));
-                        fsm.Final.ForEach(finalState =>
-                        {
-                            if (closure.Contains(finalState))
-                            {
-                                dfa.AddFinalState(dfaStates[dfaState.Id]);
-                            }
-                        });
-                    }
-
-                    dfaStates[state.Id].AddMove(c, dfaStates[dfaState.Id]);
-                }
-            }
-
-            DisplayDfaTransitionTable(dfaStates.Select(state => state.Value), stateSubsets);
-
-            return dfa;
+            return fsm.Final.Contains(state);
         }
 
-        public static List<char> GetAlphabet(List<State> states)
+        private static List<char> GetAlphabet(List<State> states)
         {
             var alphabet = new List<char>();
             states.ForEach(state => alphabet.AddRange(state.GetAlphabet()));
@@ -343,7 +296,7 @@ namespace RegexpLexer.Logic
             return alphabet;
         }
 
-        public static List<State> GetNextStatesByChar(List<State> states, char c)
+        private static List<State> GetNextStatesByChar(List<State> states, char c)
         {
             var nextStates = new List<State>();
             states.ForEach(state => nextStates.AddRange(state.GetNextStatesByChar(c)));

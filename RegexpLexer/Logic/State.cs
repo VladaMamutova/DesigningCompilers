@@ -34,6 +34,11 @@ namespace RegexpLexer.Logic
             return Moves.Where(move => move.Key == c).Select(move => move.Value)
                 .ToList();
         }
+        
+        public State GetNextStateByChar(char c)
+        {
+            return Moves.First(move => move.Key == c).Value;
+        }
 
         public bool CompareNextStates(HashSet<State> states)
         {

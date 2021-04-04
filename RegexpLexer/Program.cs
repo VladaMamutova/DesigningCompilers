@@ -27,6 +27,16 @@ namespace RegexpLexer
                 Console.WriteLine();
                 Console.Write("Minimized DFA = ");
                 FsmEngine.DisplayFsm(minimizedDfa);
+
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "abb"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "aabb"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "babb"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "aabbbabb"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "ababaabb"));
+
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "bbb"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "b"));
+                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "abab"));
             }
             else
             {

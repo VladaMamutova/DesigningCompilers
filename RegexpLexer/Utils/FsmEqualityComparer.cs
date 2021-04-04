@@ -23,6 +23,12 @@ namespace RegexpLexer.Utils
                 return false;
             }
 
+            if (!fsm1.Final.OrderBy(final => final.Id)
+                .SequenceEqual(fsm2.Final.OrderBy(final => final.Id)))
+            {
+                return false;
+            }
+
             var states1 = fsm1.GetAllStates();
             var states2 = fsm2.GetAllStates();
 
