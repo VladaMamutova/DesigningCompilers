@@ -65,7 +65,7 @@ namespace RegexpLexer.Logic
 
         public string ShowOutStates()
         {
-            return $"{string.Join(", ", Moves.Select(state => state.Value))}";
+            return string.Join(", ", Moves.Select(state => state.Value));
         }
     }
 }

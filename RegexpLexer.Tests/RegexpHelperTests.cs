@@ -162,5 +162,13 @@ namespace RegexpLexer.Tests
             string actual = Logic.RegexpHelper.InfixToPostfix(regexp);
             Assert.Equal("b+ab+.a.c*|+.b.", actual);
         }
+
+        [Fact]
+        public void InfixToPostfix_Binary()
+        {
+            string regexp = "(0|(1(01*(00)*0)*1)*)*";
+            string actual = Logic.RegexpHelper.InfixToPostfix(regexp);
+            Assert.Equal("0101*.00.*.0.*.1.*|*", actual);
+        }
     }
 }

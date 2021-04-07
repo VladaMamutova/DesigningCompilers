@@ -66,7 +66,8 @@ namespace RegexpLexer.Utils
 
         public int GetHashCode(Fsm fsm)
         {
-            int hCode = fsm.Final.Aggregate(fsm.Start.Id, (current, final) => current ^ final.Id);
+            int hCode = fsm.Final.Aggregate(fsm.Start.Id,
+                (current, final) => current ^ final.Id);
             return hCode.GetHashCode();
         }
     }

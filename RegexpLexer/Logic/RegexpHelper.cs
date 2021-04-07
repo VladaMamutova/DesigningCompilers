@@ -38,6 +38,14 @@ namespace RegexpLexer.Logic
             return string.Concat(infixStack.Reverse());
         }
 
+        /// <summary>
+        /// Преобразует инфиксную форму регулярного выражения в эквивалентную
+        /// форму постфиксную вида
+        /// (https://ru.wikipedia.org/wiki/Обратная_польская_запись#Алгоритм,
+        /// https://habr.com/ru/post/489744/)
+        /// </summary>
+        /// <param name="infix">Регулярное выражение в инфиксной нотации.</param>
+        /// <returns>Регулярное выражение в постфиксной нотации.</returns>
         public static string InfixToPostfix(string infix)
         {
             var operators = new Stack<char>();

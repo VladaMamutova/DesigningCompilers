@@ -7,44 +7,54 @@ namespace RegexpLexer
     {
         static void Main(string[] args)
         {
-            var regexp = "(a|b)*abb"; 
-            var postfix = RegexpHelper.InfixToPostfix(regexp);
-            var nfa = FsmEngine.PostfixToNfa(postfix);
-
-            if (nfa != null)
+            Console.WriteLine("Regexp Lexer\n");
+            Console.WriteLine("Press");
+            Console.WriteLine("- any key to continue");
+            Console.WriteLine("- HOME to enter regular expression again");
+            Console.WriteLine("- ESC to exit");
+            ConsoleKey userChoice;
+            do
             {
-                Console.WriteLine();
-                Console.Write("NFA = ");
-                FsmEngine.DisplayFsm(nfa);
+                Console.Write("\nEnter regular expression: ");
+                var regexp = Console.ReadLine();
+                do
+                {
+                    try
+                    {
+                        var postfix = RegexpHelper.InfixToPostfix(regexp);
+                        var nfa = FsmEngine.PostfixToNfa(postfix);
 
+                        Console.Write("Enter input expression: ");
+                        var input = Console.ReadLine();
 
-                var dfa = FsmEngine.NfaToDfa(nfa);
-                Console.WriteLine();
-                Console.Write("DFA = ");
-                FsmEngine.DisplayFsm(dfa);
+                        //Console.WriteLine();
+                        //FsmEngine.DisplayFsm(nfa, "NFA");
 
-                var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
-                Console.WriteLine();
-                Console.Write("Minimized DFA = ");
-                FsmEngine.DisplayFsm(minimizedDfa);
+                        var dfa = FsmEngine.NfaToDfa(nfa);
+                        //FsmEngine.DisplayFsm(dfa, "DFA");
 
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "abb"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "aabb"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "babb"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "aabbbabb"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "ababaabb"));
+                        var minimizedDfa =
+                            FsmEngine.MinimizeFsmByBrzozowski(dfa);
+                        //FsmEngine.DisplayFsm(minimizedDfa, "Minimized DFA");
 
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "bbb"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "b"));
-                Console.WriteLine(FsmEngine.DfaSimulation(minimizedDfa, "abab"));
-            }
-            else
-            {
-                Console.WriteLine("Failed to construct NFA from a regular expression.");
-                Console.WriteLine($"Regular expression \"{regexp}\" is incorrect.");
-            }
+                       // Console.WriteLine("DFA Simulation");
+                        var result =
+                            FsmEngine.DfaSimulation(minimizedDfa, input);
+                        Console.WriteLine("Result: " +
+                                          (result ? "Match" : "Not Match"));
 
-            Console.ReadLine();
+                        userChoice = Console.ReadKey().Key;
+                        Console.WriteLine();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        userChoice = ConsoleKey.Home;
+                    }
+                } while (userChoice != ConsoleKey.Escape &&
+                         userChoice != ConsoleKey.Home);
+
+            } while (userChoice != ConsoleKey.Escape);
         }
     }
 }

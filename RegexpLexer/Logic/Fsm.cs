@@ -28,7 +28,10 @@ namespace RegexpLexer.Logic
 
         public void AddFinalState(State state)
         {
-            Final.Add(state);
+            if (!Final.Contains(state))
+            {
+                Final.Add(state);
+            }
         }
 
         public HashSet<State> GetAllStates()
@@ -53,6 +56,11 @@ namespace RegexpLexer.Logic
         public override string ToString()
         {
             return $"{Start} -> {{{string.Join(", ", Final)}}}";
+        }
+
+        public string ShowFinalStates()
+        {
+            return $"{{{string.Join(", ", Final)}}}";
         }
     }
 }

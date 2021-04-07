@@ -94,6 +94,17 @@ namespace RegexpLexer.Tests
                 return fsm;
             }
 
+            public static Fsm InitFsmTwoWay()
+            {
+                var state0 = new State(0);
+                var state1 = new State(1);
+                var fsm = new Fsm(state0, state0);
+                state0.AddMove('0', state0);
+                state0.AddMove('1', state1);
+                state1.AddMove('1', state0);
+                return fsm;
+            }
+
             public static Fsm InitDeterministicFsmWithStartFromEpsilon()
             {
                 var state0 = new State(0);
@@ -128,6 +139,20 @@ namespace RegexpLexer.Tests
             // Arrange
             var fsm = FsmEngineTestData.InitFsmWithTwoFinals();
             var expected = FsmEngineTestData.InitReversedFsmWithStartFromEpsilon();
+
+            // Act
+            Fsm actual = FsmEngine.ReverseFsm(fsm);
+
+            // Assert
+            Assert.Equal(expected, actual, new FsmEqualityComparer());
+        }
+
+        [Fact]
+        public void ReverseFsm_TwoWay()
+        {
+            // Arrange
+            var fsm = FsmEngineTestData.InitFsmTwoWay();
+            var expected = FsmEngineTestData.InitFsmTwoWay();
 
             // Act
             Fsm actual = FsmEngine.ReverseFsm(fsm);
@@ -179,13 +204,105 @@ namespace RegexpLexer.Tests
         }
 
         [Theory]
+        [InlineData("a*", "")]
+        [InlineData("a*", "a")]
+        [InlineData("a*", "aaaa")]
+        [InlineData("(a)*", "aaaa")]
+
+        [InlineData("ab*a", "aa")]
+        [InlineData("ab*a", "aba")]
+        [InlineData("ab*a", "abbba")]
+
+        [InlineData("(abc)*(defg)*", "")]
+        [InlineData("(abc)*(defg)*", "abc")]
+        [InlineData("(abc)*(defg)*", "defg")]
+        [InlineData("(abc)*(defg)*", "abcdefg")]
+        [InlineData("(abc)*(defg)*", "abcdefgdefg")]
+        public void CheckZeroOrMoreInRegularExpression_True(string regexp, string input)
+        {
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, input);
+
+            Assert.True(actual);
+        }
+
+        [Theory]
+        [InlineData("a*", "b")]
+        [InlineData("a*", "ab")]
+        
+        [InlineData("ab*a", "ababa")]
+        [InlineData("ab*a", "abb")]
+
+        [InlineData("(abc)*(defg)*", "defgg")]
+        [InlineData("(abc)*(defg)*", "abcde")]
+        public void CheckZeroOrMoreInRegularExpression_False(string regexp, string input)
+        {
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, input);
+
+            Assert.False(actual);
+        }
+
+        [Theory]
+        [InlineData("a+", "a")]
+        [InlineData("a+", "aaaa")]
+
+        [InlineData("a+b+ab+", "abab")]
+        [InlineData("a+b+ab+", "aababbbb")]
+        [InlineData("a+b+ab+", "aaabbabbbb")]
+
+        [InlineData("(abc)+", "abc")]
+        [InlineData("(abc)+", "abcabcabc")]
+
+        [InlineData("(aa)+", "aa")]
+        [InlineData("(aa)+", "aaaa")]
+        [InlineData("(aa)+(bb)+", "aaaabb")]
+        public void CheckOneOrMoreInRegularExpression_True(string regexp, string input)
+        {
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, input);
+
+            Assert.True(actual);
+        }
+
+        [Theory]
+        [InlineData("a+", "")]
+        [InlineData("a+", "b")]
+
+        [InlineData("a+b+ab+", "abb")]
+        [InlineData("a+b+ab+", "ababab")]
+
+        [InlineData("(aa)+", "aaa")]
+        [InlineData("(aa)+", "aaaaa")]
+        [InlineData("(aa)+(bb)+", "aaaab")]
+        public void CheckOneOrMoreInRegularExpression_False(string regexp, string input)
+        {
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, input);
+
+            Assert.False(actual);
+        }
+
+        [Theory]
         [InlineData("abb")]
         [InlineData("aabb")]
         [InlineData("babb")]
         [InlineData("aaaaaabb")]
         [InlineData("abbaaababb")]
         [InlineData("aabbabb")]
-        public void CheckInputByRegularExpression_True(string expression)
+        public void CheckInputByRegularExpression1_True(string expression)
         {
             // Arrange
             var regexp = "(a|b)*abb";
@@ -209,10 +326,112 @@ namespace RegexpLexer.Tests
         [InlineData("aabbb")]
         [InlineData("aabbaabba")]
         [InlineData("aabbbb")]
-        public void CheckInputByRegularExpression_False(string expression)
+        public void CheckInputByRegularExpression1_False(string expression)
         {
             // Arrange
             var regexp = "(a|b)*abb";
+
+            // Act
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, expression);
+
+            // Assert
+            Assert.False(actual);
+        }
+
+        [Theory]
+        [InlineData("abb")]
+        [InlineData("aadd")]
+        [InlineData("abbaddbb")]
+        [InlineData("abbaccdddbbbb")]
+        [InlineData("aacddaccdddb")]
+        [InlineData("abbacddbb")]
+        public void CheckInputByRegularExpression2_True(string expression)
+        {
+            // Arrange
+            var regexp = "a(bb|ac*dd+)+b*";
+
+            // Act
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, expression);
+
+            // Assert
+            Assert.True(actual);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("a")]
+        [InlineData("ab")]
+        [InlineData("aad")]
+        [InlineData("aacdb")]
+        public void CheckInputByRegularExpression2_False(string expression)
+        {
+            // Arrange
+            var regexp = "a(bb|ac*dd+)+b*";
+
+            // Act
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, expression);
+
+            // Assert
+            Assert.False(actual);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("0")]
+        [InlineData("00")]
+        [InlineData("11")]
+        [InlineData("000")]
+        [InlineData("011")]
+        [InlineData("110")]
+        [InlineData("0000")]
+        [InlineData("0011")]
+        [InlineData("0110")]
+        [InlineData("1001")]
+        [InlineData("1100")]
+        [InlineData("1111")]
+        [InlineData("00000")]
+        public void CheckInputByRegularExpression3_True(string expression)
+        {
+            // Arrange
+            var regexp = "(0|(1(01*(00)*0)*1)*)*";  // ( 0 | ( 1 (0 1* (00)* 0)* 1)* )*
+
+            // Act
+            var postfix = RegexpHelper.InfixToPostfix(regexp);
+            var nfa = FsmEngine.PostfixToNfa(postfix);
+            var dfa = FsmEngine.NfaToDfa(nfa);
+            var minimizedDfa = FsmEngine.MinimizeFsmByBrzozowski(dfa);
+            bool actual = FsmEngine.DfaSimulation(minimizedDfa, expression);
+
+            // Assert
+            Assert.True(actual);
+        }
+
+        [Theory]
+        [InlineData("1")]
+        [InlineData("10")]
+        [InlineData("01")]
+        [InlineData("101")]
+        [InlineData("111")]
+        [InlineData("0001")]
+        [InlineData("0111")]
+        [InlineData("1000")]
+        [InlineData("00001")]
+        public void CheckInputByRegularExpression3_False(string expression)
+        {
+            // Arrange
+            var regexp = "(0|(1(01*(00)*0)*1)*)*"; // ( 0 | ( 1 (0 1* (00)* 0)* 1)* )*
 
             // Act
             var postfix = RegexpHelper.InfixToPostfix(regexp);
