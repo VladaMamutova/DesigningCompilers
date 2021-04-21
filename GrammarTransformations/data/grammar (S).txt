@@ -1,0 +1,6 @@
+S
+a b
+S
+S -> a S b S
+S -> b S a S
+S -> є

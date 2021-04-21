@@ -1,0 +1,10 @@
+S A B C
+a b
+S
+S -> A B C
+A -> B B
+A -> є
+B -> C C
+B -> a
+C -> A A
+C -> b
