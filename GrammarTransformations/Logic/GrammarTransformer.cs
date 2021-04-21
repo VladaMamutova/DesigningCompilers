@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using GrammarTransformations.Extensions;
 
@@ -15,6 +14,13 @@ namespace GrammarTransformations.Logic
         public GrammarTransformer(Grammar grammar)
         {
             Grammar = grammar;
+        }
+
+        private KeyValuePair<string, string[]> CreateRule(string nonterm,
+            IEnumerable<string> rightPart)
+        {
+            return new KeyValuePair<string, string[]>(nonterm,
+                rightPart.ToArray());
         }
 
         private HashSet<string> FindEpsilonRuleNonterms()
@@ -62,7 +68,8 @@ namespace GrammarTransformations.Logic
         }
 
 
-        private List<KeyValuePair<string, string[]>> GenerateRules(HashSet<string> eGeneratingNonterms)
+        private List<KeyValuePair<string, string[]>> GenerateRules(
+            HashSet<string> eGeneratingNonterms)
         {
             var rules = new List<KeyValuePair<string, string[]>>();
             foreach (var rule in Grammar.Rules)
@@ -76,8 +83,9 @@ namespace GrammarTransformations.Logic
                     if (eGeneratingNonterms.Contains(rule.Value[i]))
                     {
                         var rightPartEnd = rule.Value.SubArray(i);
-                        var newRightPartEnds = GenerateCombinations(rightPartEnd,
-                            eGeneratingNonterms, nontermsCount);
+                        var newRightPartEnds =
+                            rightPartEnd.GenerateCombinations(
+                                eGeneratingNonterms, nontermsCount);
                         foreach (var partEnd in newRightPartEnds)
                         {
                             var newRightPart = rightPart.Concat(partEnd);
@@ -94,150 +102,19 @@ namespace GrammarTransformations.Logic
                     }
                 }
 
-                if (rightPart.Count > 0 && !rightPart.SequenceEqual(EpsilonRule))
+                if (rightPart.Count > 0 &&
+                    !rightPart.SequenceEqual(EpsilonRule))
                 {
                     rightParts.Add(rightPart.ToArray());
                 }
 
                 foreach (var part in rightParts)
                 {
-                    rules.Add(new KeyValuePair<string, string[]>(rule.Key, part));
+                    rules.Add(CreateRule(rule.Key, part));
                 }
             }
 
             return rules;
-        }
-
-        private List<string[]> GenerateCombinations(string[] chain,
-            HashSet<string> symbols, int resultSymbolsCount)
-        {
-            var combinations = new List<string[]>();
-            if (resultSymbolsCount < 1)
-            {
-                return combinations;
-            }
-
-            if (resultSymbolsCount == 1)
-            {
-                var combination = new List<string> {chain[0]};
-                combination.AddRange(
-                    GetSubChainWithoutSymbols(chain, symbols, 1));
-
-                combinations.Add(combination.ToArray());
-                return combinations;
-            }
-
-            var combinationStart =
-                GetSubChainWithSymbols(chain, symbols, resultSymbolsCount - 1)
-                    .ToList();
-            for (var i = combinationStart.Count; i < chain.Length; i++)
-            {
-                if (symbols.Contains(chain[i]))
-                {
-                    var combination = new List<string>();
-                    combination.AddRange(combinationStart);
-                    combination.Add(chain[i]);
-                    combination.AddRange(
-                        GetSubChainWithoutSymbols(chain, symbols, i + 1));
-                    combinations.Add(combination.ToArray());
-                }
-                else
-                {
-                    combinationStart.Add(chain[i]);
-                }
-            }
-
-            combinations.AddRange(GenerateCombinations(chain, symbols, resultSymbolsCount - 1));
-
-            return combinations;
-        }
-
-        private string[] GetSubChainWithSymbols(string[] chain, HashSet<string> symbols, int symbolsCount)
-        {
-            var subChain = new List<string>();
-            var count = 0;
-            for (var i = 0; i < chain.Length && count < symbolsCount; i++)
-            {
-                if (symbols.Contains(chain[i]))
-                {
-                    subChain.Add(chain[i]);
-                    count++;
-                }
-                else
-                {
-                    subChain.Add(chain[i]);
-                }
-            }
-
-            return subChain.ToArray();
-        }
-
-        private string[] GetSubChainWithoutSymbols(string[] chain,
-            HashSet<string> symbols, int start)
-        {
-            var subChain = new List<string>();
-            for (var i = start; i < chain.Length; i++)
-            {
-                if (!symbols.Contains(chain[i]))
-                {
-                    subChain.Add(chain[i]);
-                }
-            }
-
-            return subChain.ToArray();
-        }
-
-        private string FindPrefixForNonterm(string nonterm, string[] rules)
-        {
-            string maxPrefix = "";
-            foreach (var rule in rules)
-            {
-                var prefix = rule;
-                var found = false;
-
-                while (prefix.Length > 0 && !found)
-                {
-                    var prefixCount = rules.Count(r => r.StartsWith(prefix));
-
-                    if (prefixCount > 1)
-                    {
-                        found = true;
-                        if (prefix.Length > maxPrefix.Length)
-                        {
-                            maxPrefix = prefix;
-                        }
-                    }
-                    else
-                    {
-                        prefix = prefix.Remove(prefix.Length - 1);
-                    }
-                }
-            }
-
-            return maxPrefix;
-        }
-
-        private string[] GetRuleVariablesByLength(string[] rule, int length)
-        {
-            List<string> ruleVariables = new List<string>();
-            for (int i = 0; i < rule.Length && length > 0; i++)
-            {
-                int varLength = rule[i].Length;
-                if (length >= varLength)
-                {
-                    ruleVariables.Add(rule[i]);
-                    length -= varLength;
-                }
-                else
-                {
-                    throw new ArgumentException(
-                        $"Failed to get rule variables. Variable '{rule[i]}' " +
-                        "cannot be added to the list. The length is incorrect.",
-                        nameof(length));
-                }
-            }
-
-            return ruleVariables.ToArray();
         }
 
         /// <summary>
@@ -283,22 +160,18 @@ namespace GrammarTransformations.Logic
                 }
 
                 newRightPart.Add(newNonterm);
-                newRules.Add(new KeyValuePair<string, string[]>(nonterm,
-                    newRightPart.ToArray()));
+                newRules.Add(CreateRule(nonterm, newRightPart));
             }
 
             foreach (var i in startsWithNontermIndices)
             {
                 var newRightPart =
-                    rightParts[i].SubArray(1).Concat(new[] { newNonterm })
+                    rightParts[i].SubArray(1).Concat(new[] {newNonterm})
                         .ToArray();
-                newRules.Add(
-                    new KeyValuePair<string, string[]>(newNonterm,
-                        newRightPart));
+                newRules.Add(CreateRule(newNonterm, newRightPart));
             }
 
-            newRules.Add(
-                new KeyValuePair<string, string[]>(newNonterm, EpsilonRule));
+            newRules.Add(CreateRule(newNonterm, EpsilonRule));
 
             return newRules.ToArray();
         }
@@ -314,7 +187,8 @@ namespace GrammarTransformations.Logic
         public Grammar RemoveEpsilonRules()
         {
             HashSet<string> eRuleNonterms = FindEpsilonRuleNonterms();
-            HashSet<string> eGeneratingNonterms = FindEpsilonGeneratingNonterms(eRuleNonterms);
+            HashSet<string> eGeneratingNonterms =
+                FindEpsilonGeneratingNonterms(eRuleNonterms);
 
             var newNonterms = new List<string>();
             var newRules = new List<KeyValuePair<string, string[]>>();
@@ -326,9 +200,8 @@ namespace GrammarTransformations.Logic
                 newNonterms.Add(newStart);
                 newRules.AddRange(new[]
                 {
-                    new KeyValuePair<string, string[]>(newStart,
-                        new[] {Grammar.Start}),
-                    new KeyValuePair<string, string[]>(newStart, EpsilonRule)
+                    CreateRule(newStart, new[] {Grammar.Start}),
+                    CreateRule(newStart, EpsilonRule)
                 });
             }
 
@@ -347,7 +220,8 @@ namespace GrammarTransformations.Logic
         public Grammar EliminateLeftRecursion()
         {
             var newNonterms = new List<string>(Grammar.Nonterms);
-            var newRules = new List<KeyValuePair<string, string[]>>(Grammar.Rules);
+            var newRules =
+                new List<KeyValuePair<string, string[]>>(Grammar.Rules);
             for (int i = 0; i < Grammar.Nonterms.Length; i++)
             {
                 var nontermI = Grammar.Nonterms[i];
@@ -358,13 +232,14 @@ namespace GrammarTransformations.Logic
                 {
                     var nontermJ = Grammar.Nonterms[j];
                     var rightPartsIWithJ = rightPartsI
-                        .Where(rightPartI => rightPartI[0] == nontermJ).ToList();
+                        .Where(rightPartI => rightPartI[0] == nontermJ)
+                        .ToList();
 
                     if (rightPartsIWithJ.Count > 0)
                     {
-                        var rightPartsJ = Grammar.Rules
-                        .Where(rule => rule.Key == nontermJ)
-                        .Select(rule => rule.Value).ToList();
+                        var rightPartsJ = newRules
+                            .Where(rule => rule.Key == nontermJ)
+                            .Select(rule => rule.Value).ToList();
 
                         rightPartsI.RemoveAll(rightPartI =>
                             rightPartI[0] == nontermJ);
@@ -390,7 +265,7 @@ namespace GrammarTransformations.Logic
                     newNonterms.Add(newNonterm);
                 }
             }
-            
+
             return new Grammar(newNonterms.ToArray(), Grammar.Terms,
                 newRules.ToArray(), Grammar.Start);
         }
@@ -404,7 +279,8 @@ namespace GrammarTransformations.Logic
         public Grammar ApplyLeftFactoring()
         {
             var newNonterms = new List<string>(Grammar.Nonterms);
-            var newRules = new List<KeyValuePair<string, string[]>>(Grammar.Rules);
+            var newRules =
+                new List<KeyValuePair<string, string[]>>(Grammar.Rules);
 
             foreach (var nonterm in Grammar.Nonterms)
             {
@@ -415,7 +291,7 @@ namespace GrammarTransformations.Logic
                 var rulesAsStrings = rules.Select(rule => string.Join("", rule))
                     .ToArray();
 
-                string prefix = FindPrefixForNonterm(nonterm, rulesAsStrings);
+                string prefix = rulesAsStrings.FindPrefix();
                 if (prefix.Length > 0)
                 {
                     string newNonterm = nonterm + "1";
@@ -429,14 +305,11 @@ namespace GrammarTransformations.Logic
                         {
                             if (prefixVariables == null)
                             {
-                                prefixVariables =
-                                    GetRuleVariablesByLength(rules[i],
-                                        prefix.Length);
-                                newRules.Add(
-                                    new KeyValuePair<string, string[]>(nonterm,
-                                        prefixVariables
-                                            .Concat(new[] {newNonterm})
-                                            .ToArray()));
+                                prefixVariables = rules[i]
+                                    .GetItemsByTotalLength(prefix.Length);
+                                newRules.Add(CreateRule(nonterm,
+                                    prefixVariables.Concat(new[]
+                                        {newNonterm})));
                             }
 
                             var suffix =
@@ -445,15 +318,12 @@ namespace GrammarTransformations.Logic
                             {
                                 suffix = suffix.Concat(EpsilonRule).ToArray();
                             }
-                            newRules.Add(
-                                new KeyValuePair<string, string[]>(newNonterm,
-                                    suffix));
+
+                            newRules.Add(CreateRule(newNonterm, suffix));
                         }
                         else
                         {
-                            newRules.Add(
-                                new KeyValuePair<string, string[]>(nonterm,
-                                    rules[i]));
+                            newRules.Add(CreateRule(nonterm, rules[i]));
                         }
                     }
                 }
