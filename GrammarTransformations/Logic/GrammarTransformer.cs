@@ -255,7 +255,7 @@ namespace GrammarTransformations.Logic
                     }
                 }
 
-                var newNonterm = nontermI + "1";
+                var newNonterm = nontermI + '\'';
                 var resultRules = EliminateImmediateLeftRecursion(nontermI,
                     rightPartsI, newNonterm);
                 if (resultRules.Length > 0)
@@ -294,7 +294,7 @@ namespace GrammarTransformations.Logic
                 string prefix = rulesAsStrings.FindPrefix();
                 if (prefix.Length > 0)
                 {
-                    string newNonterm = nonterm + "1";
+                    string newNonterm = nonterm + '\'';
                     newNonterms.Add(newNonterm);
                     newRules.RemoveAll(rule => rule.Key == nonterm);
 

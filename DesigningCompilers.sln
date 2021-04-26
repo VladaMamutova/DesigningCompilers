@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegexpLexer.Tests", "Regexp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrammarTransformations", "GrammarTransformations\GrammarTransformations.csproj", "{6B8C1E26-3EB7-4F85-9A80-4EA564EA44F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyntaxAnalysis", "SyntaxAnalysis\SyntaxAnalysis.csproj", "{6F297C57-CEEE-4F90-9214-E3D22940EB22}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{6B8C1E26-3EB7-4F85-9A80-4EA564EA44F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B8C1E26-3EB7-4F85-9A80-4EA564EA44F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B8C1E26-3EB7-4F85-9A80-4EA564EA44F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F297C57-CEEE-4F90-9214-E3D22940EB22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F297C57-CEEE-4F90-9214-E3D22940EB22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F297C57-CEEE-4F90-9214-E3D22940EB22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F297C57-CEEE-4F90-9214-E3D22940EB22}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
