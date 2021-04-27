@@ -23,18 +23,13 @@ namespace SyntaxAnalysis.Model
             _currentChar = input?.Length > 0 ? _input[Position] : EndOfInput;
         }
 
-        public void Advance(int length)
+        public void Advance()
         {
-            Position += length;
+            Position ++;
             _currentChar = IsEnd ? EndOfInput : _input[Position];
         }
 
-        private char GetNextChar()
-        {
-            return Position + 1 >= _input.Length ? EndOfInput : _input[Position + 1];
-        }
-
-        private bool MatchValue(string value)
+        private bool CompareFollowingValue(string value)
         {
             return Position + value.Length <= _input.Length &&
                    string.Equals(value,
@@ -92,9 +87,13 @@ namespace SyntaxAnalysis.Model
             keyword = "";
             foreach (var key in Keywords)
             {
-                if (MatchValue(key))
+                if (CompareFollowingValue(key))
                 {
                     keyword = key;
+                    foreach (var _ in key)
+                    {
+                        Advance();
+                    }
                     return true;
                 }
             }
@@ -102,30 +101,30 @@ namespace SyntaxAnalysis.Model
             return false;
         }
 
-        private bool TryMatchConstant(out string constant)
+        private bool TryMatchConstant(out int constant)
         {
-            constant = "";
+            constant = 0;
+            var startPosition = Position;
 
-            var pos = Position;
-            while (_input[pos] >= '0' && _input[pos] <= '9')
+            while (_currentChar >= '0' && _currentChar <= '9')
             {
-                constant += _input[pos];
-                pos++;
+                constant *= 10;
+                constant += _currentChar - '0';
+                Advance();
             }
 
-            return !string.IsNullOrEmpty(constant);
+            return Position > startPosition;
         }
 
         private bool TryMatchIdentifier(out string identifier)
         {
             identifier = "";
 
-            var pos = Position;
-            while (_input[pos] >= 'a' && _input[pos] <= 'z' ||
-                   _input[pos] >= 'A' && _input[pos] <= 'Z')
+            while (_currentChar >= 'a' && _currentChar <= 'z' ||
+                   _currentChar >= 'A' && _currentChar <= 'Z')
             {
-                identifier += _input[pos];
-                pos++;
+                identifier += _currentChar;
+                Advance();
             }
 
             return !string.IsNullOrEmpty(identifier);
@@ -133,20 +132,20 @@ namespace SyntaxAnalysis.Model
 
         public Token GetNextToken()
         {
-            TokenType type;
-            string value;
+            object value;
 
-            type = MatchSingleCharacterToken(_currentChar);
+            var type = MatchSingleCharacterToken(_currentChar);
             if (type != TokenType.None)
             {
-                value = _currentChar.ToString();
+                value = _currentChar;
+                Advance();
 
-                var nextChar = GetNextChar();
-                var newType = MatchTwoCharactersToken(_currentChar, nextChar);
+                var newType = MatchTwoCharactersToken((char)value, _currentChar);
                 if (newType != TokenType.None)
                 {
                     type = newType;
-                    value += nextChar;
+                    value += _currentChar.ToString();
+                    Advance();
                 }
             }
             else
@@ -175,7 +174,6 @@ namespace SyntaxAnalysis.Model
                 }
             }
 
-            Advance(value.Length);
             return new Token(type, value);
         }
     }

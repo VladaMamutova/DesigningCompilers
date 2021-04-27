@@ -5,19 +5,17 @@
         public static readonly Token None = new Token(TokenType.None, "");
 
         public TokenType Type { get; }
-        public string Value { get; }
+        public object Value { get; }
 
-        public Token(TokenType type, string value)
+        public Token(TokenType type, object value)
         {
             Type = type;
             Value = value;
         }
 
-        public Token(TokenType type, char value) : this(type, value.ToString()) { }
-
         public override string ToString()
         {
-            return Value;
+            return Value.ToString();
         }
     }
 }

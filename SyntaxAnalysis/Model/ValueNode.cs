@@ -3,7 +3,7 @@
     class ValueNode : AstNode
     {
         public Token Token { get; }
-        public string Value => Token.Value;
+        public object Value => Token.Value;
 
         public ValueNode(string name, Token token) : base(name)
         {
@@ -17,7 +17,7 @@
 
         public override string ToString()
         {
-            return Value;
+            return Value.ToString();
         }
     }
 }
