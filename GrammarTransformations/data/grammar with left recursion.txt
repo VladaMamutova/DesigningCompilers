@@ -1,0 +1,7 @@
+Block OpList Op
+begin end ; a = b
+Block
+Block -> begin OpList end
+OpList -> Op
+OpList -> OpList ; Op
+Op -> a = b

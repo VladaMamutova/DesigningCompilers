@@ -1,0 +1,11 @@
+S X Y Z
+a b
+S
+S -> X X
+S -> Y
+X -> a X b
+X -> є
+Y -> a Y b
+Y -> Z
+Z -> b Z a
+Z -> є

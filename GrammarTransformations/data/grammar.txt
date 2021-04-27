@@ -1,0 +1,8 @@
+Block OpList Op Tail
+{ } ; a = b
+Block
+Block -> { OpList }
+OpList -> Op Tail
+Op -> a = b
+Tail -> ; Op Tail
+Tail -> є
