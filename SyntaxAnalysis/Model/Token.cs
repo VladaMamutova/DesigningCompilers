@@ -2,6 +2,8 @@
 {
     class Token
     {
+        public static readonly Token None = new Token(TokenType.None, "");
+
         public TokenType Type { get; }
         public string Value { get; }
 

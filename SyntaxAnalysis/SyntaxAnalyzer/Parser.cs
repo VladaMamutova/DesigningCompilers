@@ -1,8 +1,13 @@
-﻿using System;
+﻿using SyntaxAnalysis.Exception;
 using SyntaxAnalysis.Model;
 
 namespace SyntaxAnalysis.SyntaxAnalyzer
 {
+    // <блок> -> { <список операторов> }
+    // <список операторов> -> <оператор> <хвост> | <оператор>
+    // <оператор> -> <идентификатор> = <выражение>
+    // <хвост> -> ; <оператор> <хвост> | ; <оператор>
+
     // <выражение> ->
     // <простое выражение> |
     // <простое выражение> <операция отношения> <простое выражение>
@@ -11,18 +16,14 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
     // <терм> | <знак> <терм> |
     // <простое выражение> <операция типа сложения> <терм>
 
-    // <терм> ->
-    // <фактор> | <терм> <операция типа умножения> <фактор>
+    // <терм> -> <фактор> | <терм> <операция типа умножения> <фактор>
 
     // <фактор> -> <идентификатор> | <константа> |
     // ( < простое выражение > ) | not<фактор>
 
     // <операция отношения> -> = | <> | < | <= | > | >=
-
     // <знак> -> + | -
-
     // <операция типа сложения> -> + | - | or
-    
     // <операция типа умножения> -> * | / | div | mod | and
 
     class Parser
@@ -44,14 +45,78 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
             }
             else
             {
-                RaiseException(tokenType, _currentToken);
+                throw new ParserException(_lexer.Position, tokenType, _currentToken);
             }
         }
-
-        private void RaiseException(TokenType expected, Token foundToken)
+        
+        // <блок> ->
+        // { <список операторов> }
+        private AstNode ParseBlock()
         {
-            throw new Exception($" Position: {_lexer.Position}\n" +
-                                $"Error: expected '{expected}', found '{foundToken}'");
+            EatToken(TokenType.LeftBrace);
+            var node = ParseOperatorList();
+            EatToken(TokenType.RightBrace);
+
+            return node;
+        }
+
+        // <список операторов> ->
+        // <оператор> <хвост> | <оператор>
+        private AstNode ParseOperatorList()
+        {
+            var node = ParseOperator();
+
+            var secondNode = TryParseTail();
+            if (secondNode != null)
+            {
+                node = new BinaryNode("OperatorList", node, Token.None,
+                    secondNode);
+            }
+
+            return node;
+        }
+
+        // <оператор> ->
+        // <идентификатор> = <выражение>
+        private AstNode ParseOperator()
+        {
+            var token = _currentToken;
+            EatToken(TokenType.Identifier);
+            var node = new ValueNode("Identifier", token);
+
+            token = _currentToken;
+            EatToken(TokenType.Equal);
+
+            var secondNode = ParseExpression();
+
+            return new BinaryNode("Operator", node, token, secondNode);
+        }
+
+        // null if can't parse tail
+        private AstNode TryParseTail()
+        {
+            return _currentToken.Type == TokenType.SemiColon
+                ? ParseTail()
+                : null;
+        }
+
+        // <хвост> ->
+        // ; <оператор> <хвост> | ; <оператор>
+        private AstNode ParseTail()
+        {
+            var token = _currentToken;
+            EatToken(TokenType.SemiColon);
+
+            var node = ParseOperator();
+            node = new UnaryNode("Tail", token, node);
+
+            var secondNode = TryParseTail();
+            if (secondNode != null)
+            {
+                node = new BinaryNode("Tail", node, Token.None, secondNode);
+            }
+
+            return node;
         }
 
         // <выражение> ->
@@ -61,23 +126,21 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
         {
             var node = ParseSimpleExpression(); // <простое выражение>
 
-            if (node != null) // <простое выражение> <операция отношения> <простое выражение>
+            if (TokenType.ComparisonOperator.HasFlag(_currentToken.Type)
+            ) // <простое выражение> <операция отношения> <простое выражение>
             {
-                if (TokenType.ComparisonOperator.HasFlag(_currentToken.Type))
-                {
-                    var token = _currentToken;
-                    EatToken(TokenType.ComparisonOperator);
-                    var secondNode = ParseSimpleExpression();
-                    node = new BinaryNode("Expression", node, token,
-                        secondNode);
-                }
+                var token = _currentToken;
+                EatToken(TokenType.ComparisonOperator);
+                var secondNode = ParseSimpleExpression();
+                node = new BinaryNode("Expression", node, token,
+                    secondNode);
             }
 
             return node;
         }
 
         // <простое выражение> ->
-        // <терм> | <знак> <терм> |
+        // <знак> <терм> | <терм> |
         // <простое выражение> <операция типа сложения> <терм>
         private AstNode ParseSimpleExpression()
         {
@@ -95,17 +158,16 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
                 node = ParseTerm(); // <терм>
             }
 
-            if (node != null) // node = <терм> | <знак> <терм> = <простое выражение>
+            // node = <терм> | <знак> <терм> = <простое выражение>
+
+            if (TokenType.AdditiveOperator.HasFlag(_currentToken.Type)
+            ) // <простое выражение> <операция типа сложения> <терм>
             {
-                // <простое выражение> <операция типа сложения> <терм>
-                if (TokenType.AdditiveOperator.HasFlag(_currentToken.Type))
-                {
-                    var token = _currentToken;
-                    EatToken(TokenType.AdditiveOperator);
-                    var secondNode = ParseTerm();
-                    node = new BinaryNode("SimpleExpression", node, token,
-                        secondNode);
-                }
+                var token = _currentToken;
+                EatToken(TokenType.AdditiveOperator);
+                var secondNode = ParseTerm();
+                node = new BinaryNode("SimpleExpression", node, token,
+                    secondNode);
             }
 
             return node;
@@ -115,25 +177,24 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
         // <фактор> | <терм> <операция типа умножения> <фактор>
         private AstNode ParseTerm()
         {
-            AstNode node = ParseFactor(); // <фактор>
+            AstNode node = ParseFactor(); // <фактор> = <терм>
 
-            if (node != null) // node = <фактор> = <терм>
+            // node = <фактор> = <терм>
+
+            if (TokenType.MultiplicativeOperator.HasFlag(_currentToken.Type)
+            ) // <терм> <операция типа умножения> <фактор>
             {
-                // <терм> <операция типа умножения> <фактор>
-                if (TokenType.MultiplicativeOperator.HasFlag(_currentToken.Type))
-                {
-                    var token = _currentToken;
-                    EatToken(TokenType.MultiplicativeOperator);
-                    var secondNode = ParseFactor();
-                    node = new BinaryNode("Term", node, token, secondNode);
-                }
+                var token = _currentToken;
+                EatToken(TokenType.MultiplicativeOperator);
+                var secondNode = ParseFactor();
+                node = new BinaryNode("Term", node, token, secondNode);
             }
 
             return node;
         }
 
-        // <фактор> -> <идентификатор> | <константа> |
-        // ( < простое выражение > ) | not<фактор>
+        // <фактор> ->
+        // <идентификатор> | <константа> | ( < простое выражение > ) | not<фактор>
         private AstNode ParseFactor()
         {
             AstNode node;
@@ -144,32 +205,47 @@ namespace SyntaxAnalysis.SyntaxAnalyzer
                 case TokenType.Identifier:
                 {
                     EatToken(TokenType.Identifier);
-                    return new ValueNode("Factor", token);
+                    node = new ValueNode("Factor", token);
+                    break;
                 }
                 case TokenType.Const:
                 {
                     EatToken(TokenType.Const);
-                    return new ValueNode("Factor", token);
-                    }
+                    node = new ValueNode("Factor", token);
+                    break;
+                }
                 case TokenType.LeftParenthesis:
                 {
                     EatToken(TokenType.LeftParenthesis);
                     node = ParseSimpleExpression();
                     EatToken(TokenType.RightParenthesis);
-                    return node;
+                    break;
                 }
                 case TokenType.Not:
+                {
                     EatToken(TokenType.Not);
                     node = ParseFactor();
-                    return new UnaryNode("Factor", token, node);
+                    node = new UnaryNode("Factor", token, node);
+                    break;
+                }
+                default:
+                {
+                    throw new ParserException(_lexer.Position,
+                        new[]
+                        {
+                            TokenType.Identifier, TokenType.Const,
+                            TokenType.LeftParenthesis, TokenType.Not
+                        },
+                        token);
+                }
             }
 
-            return null;
+            return node;
         }
 
         public AstNode Parse()
         {
-            return ParseExpression();
+            return ParseBlock();
         }
     }
 }

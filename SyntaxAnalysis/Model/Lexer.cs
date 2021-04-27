@@ -39,6 +39,8 @@
                 case '>': return new Token(TokenType.Greater, c);
                 case '(': return new Token(TokenType.LeftParenthesis, c);
                 case ')': return new Token(TokenType.RightParenthesis, c);
+                case '{': return new Token(TokenType.LeftBrace, c);
+                case '}': return new Token(TokenType.RightBrace, c);
                 case ';': return new Token(TokenType.SemiColon, c);
                 case EndOfInput: return new Token(TokenType.EndOfInput, c);
 

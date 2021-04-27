@@ -25,12 +25,14 @@
 
         LeftParenthesis = 1 << 16,
         RightParenthesis = 1 << 17,
-        SemiColon = 1 << 18,
+        LeftBrace = 1 << 18,
+        RightBrace = 1 << 19,
+        SemiColon = 1 << 20,
 
-        Identifier = 1 << 19,
-        Const = 1 << 20,
+        Identifier = 1 << 21,
+        Const = 1 << 22,
 
-        EndOfInput = 1 << 21,
+        EndOfInput = 1 << 23,
 
         ComparisonOperator = Equal | NotEqual | Less | LessOrEqual | Greater |
                                GreaterOrEqual,

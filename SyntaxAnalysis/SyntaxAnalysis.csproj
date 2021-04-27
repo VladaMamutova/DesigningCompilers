@@ -49,6 +49,7 @@
     <Compile Include="Model\UnaryNode.cs" />
     <Compile Include="Model\Token.cs" />
     <Compile Include="Model\TokenType.cs" />
+    <Compile Include="Exception\ParserException.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Model\Lexer.cs" />

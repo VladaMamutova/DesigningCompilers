@@ -7,7 +7,7 @@ namespace SyntaxAnalysis
     {
         static void Main(string[] args)
         {
-            Parser parser = new Parser("i>(-a*2+b)");
+            Parser parser = new Parser("{c=i+8>(-a*2+b);b=5;c=c+b}");
             var ast = parser.Parse();
             Console.WriteLine(ast);
             Console.ReadLine();
