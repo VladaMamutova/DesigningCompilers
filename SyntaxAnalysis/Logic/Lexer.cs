@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Globalization;
+using SyntaxAnalysis.Model;
 
-namespace SyntaxAnalysis.Model
+namespace SyntaxAnalysis.Logic
 {
+    // Lexical analyzer (also known as scanner or tokenizer)
     class Lexer
     {
         public static readonly string[] Keywords =

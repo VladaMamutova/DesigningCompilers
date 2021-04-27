@@ -1,7 +1,7 @@
 ﻿using SyntaxAnalysis.Exception;
 using SyntaxAnalysis.Model;
 
-namespace SyntaxAnalysis.SyntaxAnalyzer
+namespace SyntaxAnalysis.Logic
 {
     // <блок> -> { <список операторов> }
     // <список операторов> -> <оператор> <хвост> | <оператор>

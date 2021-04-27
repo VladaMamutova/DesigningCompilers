@@ -1,5 +1,5 @@
 ﻿using System;
-using SyntaxAnalysis.SyntaxAnalyzer;
+using SyntaxAnalysis.Logic;
 
 namespace SyntaxAnalysis
 {
