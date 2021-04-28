@@ -57,7 +57,8 @@ namespace SyntaxAnalysis.Logic
             var node = ParseOperatorList();
             EatToken(TokenType.RightBrace);
 
-            return node;
+            return new UnaryNode("Block", Token.None, node); // для полного вывода
+            //return node;
         }
 
         // <список операторов> ->
@@ -104,11 +105,10 @@ namespace SyntaxAnalysis.Logic
         // ; <оператор> <хвост> | ; <оператор>
         private AstNode ParseTail()
         {
-            var token = _currentToken;
             EatToken(TokenType.SemiColon);
 
             var node = ParseOperator();
-            node = new UnaryNode("Tail", token, node);
+            node = new UnaryNode("Tail", Token.None, node);
 
             var secondNode = TryParseTail();
             if (secondNode != null)
@@ -120,8 +120,8 @@ namespace SyntaxAnalysis.Logic
         }
 
         // <выражение> ->
-        // <простое выражение> |
-        // <простое выражение> <операция отношения> <простое выражение>
+        // <простое выражение> <операция отношения> <простое выражение> |
+        // <простое выражение>
         private AstNode ParseExpression()
         {
             var node = ParseSimpleExpression(); // <простое выражение>
@@ -129,11 +129,15 @@ namespace SyntaxAnalysis.Logic
             if (TokenType.ComparisonOperator.HasFlag(_currentToken.Type)
             ) // <простое выражение> <операция отношения> <простое выражение>
             {
-                var token = _currentToken;
+                var token = new Token(TokenType.ComparisonOperator,
+                    _currentToken.Value);
                 EatToken(TokenType.ComparisonOperator);
                 var secondNode = ParseSimpleExpression();
-                node = new BinaryNode("Expression", node, token,
-                    secondNode);
+                node = new BinaryNode("Expression", node, token, secondNode);
+            }
+            else
+            {
+                node = new UnaryNode("Expression", Token.None, node); // для полного вывода
             }
 
             return node;
@@ -148,7 +152,7 @@ namespace SyntaxAnalysis.Logic
 
             if (TokenType.Sign.HasFlag(_currentToken.Type)) // <знак> <терм>
             {
-                var token = _currentToken;
+                var token = new Token(TokenType.Sign, _currentToken.Value);
                 EatToken(TokenType.Sign);
                 node = ParseTerm();
                 node = new UnaryNode("SimpleExpression", token, node);
@@ -156,6 +160,7 @@ namespace SyntaxAnalysis.Logic
             else
             {
                 node = ParseTerm(); // <терм>
+                node = new UnaryNode("SimpleExpression", Token.None, node);  // для полного вывода
             }
 
             // node = <терм> | <знак> <терм> = <простое выражение>
@@ -163,10 +168,10 @@ namespace SyntaxAnalysis.Logic
             if (TokenType.AdditiveOperator.HasFlag(_currentToken.Type)
             ) // <простое выражение> <операция типа сложения> <терм>
             {
-                var token = _currentToken;
+                var token = new Token(TokenType.AdditiveOperator, _currentToken.Value);
                 EatToken(TokenType.AdditiveOperator);
                 var secondNode = ParseTerm();
-                node = new BinaryNode("SimpleExpression", node, token,
+                node = new BinaryNode("SimpleExpression", node, token, 
                     secondNode);
             }
 
@@ -184,10 +189,14 @@ namespace SyntaxAnalysis.Logic
             if (TokenType.MultiplicativeOperator.HasFlag(_currentToken.Type)
             ) // <терм> <операция типа умножения> <фактор>
             {
-                var token = _currentToken;
+                var token = new Token(TokenType.MultiplicativeOperator, _currentToken.Value);
                 EatToken(TokenType.MultiplicativeOperator);
                 var secondNode = ParseFactor();
                 node = new BinaryNode("Term", node, token, secondNode);
+            }
+            else
+            {
+                node = new UnaryNode("Term", Token.None, node); // для полного вывода
             }
 
             return node;
@@ -219,7 +228,8 @@ namespace SyntaxAnalysis.Logic
                     EatToken(TokenType.LeftParenthesis);
                     node = ParseSimpleExpression();
                     EatToken(TokenType.RightParenthesis);
-                    break;
+                    node = new UnaryNode("Factor", Token.None, node);  // для полного вывода
+                        break;
                 }
                 case TokenType.Not:
                 {

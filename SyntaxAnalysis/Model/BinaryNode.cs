@@ -1,4 +1,4 @@
-﻿using System;
+﻿using SyntaxAnalysis.Logic;
 
 namespace SyntaxAnalysis.Model
 {
@@ -16,14 +16,15 @@ namespace SyntaxAnalysis.Model
             Right = right;
         }
         
-        public override string Visit()
+        public override object Accept(INodeVisitor visitor)
         {
-            throw new NotImplementedException();
+            return visitor.VisitBinaryNode(this);
         }
 
         public override string ToString()
         {
-            return $"{Left}{Token}{Right}";
+            var token = Token.Type == TokenType.None ? " " : $" {Token.Value} ";
+            return $"{Left}{token}{Right}";
         }
     }
 }

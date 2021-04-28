@@ -10,6 +10,7 @@ namespace SyntaxAnalysis.Logic
         public static readonly string[] Keywords =
             {"mod", "div", "and", "or", "not"};
 
+        public const char Whitespace = ' ';
         public const char EndOfInput = '\n';
 
         public int Position { get; private set; }
@@ -135,6 +136,11 @@ namespace SyntaxAnalysis.Logic
         public Token GetNextToken()
         {
             object value;
+
+            while (_currentChar == Whitespace)
+            {
+                Advance();
+            }
 
             var type = MatchSingleCharacterToken(_currentChar);
             if (type != TokenType.None)

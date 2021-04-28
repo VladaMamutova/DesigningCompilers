@@ -43,6 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logic\NodeVisitor.cs" />
+    <Compile Include="Logic\NodeStringInterpreter.cs" />
     <Compile Include="Model\BinaryNode.cs" />
     <Compile Include="Model\AstNode.cs" />
     <Compile Include="Model\ValueNode.cs" />

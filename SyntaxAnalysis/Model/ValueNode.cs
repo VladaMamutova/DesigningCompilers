@@ -1,4 +1,6 @@
-﻿namespace SyntaxAnalysis.Model
+﻿using SyntaxAnalysis.Logic;
+
+namespace SyntaxAnalysis.Model
 {
     class ValueNode : AstNode
     {
@@ -10,9 +12,9 @@
             Token = token;
         }
 
-        public override string Visit()
+        public override object Accept(INodeVisitor visitor)
         {
-            throw new System.NotImplementedException();
+            return visitor.VisitValueNode(this);
         }
 
         public override string ToString()

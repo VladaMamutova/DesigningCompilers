@@ -1,4 +1,6 @@
-﻿namespace SyntaxAnalysis.Model
+﻿using SyntaxAnalysis.Logic;
+
+namespace SyntaxAnalysis.Model
 {
     abstract class AstNode
     {
@@ -9,7 +11,7 @@
             Name = name;
         }
 
-        public abstract string Visit();
+        public abstract object Accept(INodeVisitor visitor);
 
         public override string ToString()
         {

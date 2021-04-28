@@ -1,4 +1,6 @@
-﻿namespace SyntaxAnalysis.Model
+﻿using SyntaxAnalysis.Logic;
+
+namespace SyntaxAnalysis.Model
 {
     class UnaryNode : AstNode
     {
@@ -10,15 +12,29 @@
             Token = token;
             Node = node;
         }
-        
-        public override string Visit()
-        {
-            throw new System.NotImplementedException();
-        }
 
+        public override object Accept(INodeVisitor visitor)
+        {
+            return visitor.VisitUnaryNode(this);
+        }
+        
         public override string ToString()
         {
-            return $"{Token}{Node}";
+            string nodeInfo;
+            if (Name == "Block")
+            {
+                nodeInfo = $"{{ {Node} }}";
+            }
+            else if (Name == "Tail")
+            {
+                nodeInfo = $"; {Node}";
+            }
+            else
+            {
+                nodeInfo = Node.ToString();
+            }
+            var token = Token.Type == TokenType.None ? "" : $"{Token.Value} ";
+            return $"{token}{nodeInfo}";
         }
     }
 }
